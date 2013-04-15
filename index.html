@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>Sitting order v2</title>
+        <style type="text/css">
+            .smallmap {
+                width: 1024px;
+                height: 512px;
+                border: 1px solid #00F;
+            }
+        </style>
+        <link rel="stylesheet" href="style.css" type="text/css">
+        <script src="OpenLayers.js"></script>
+        <script type="text/javascript">
+        var map;
+
+        // create new sitting
+        function create_place(vectorLayer, lonlat) {
+            var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat);
+            var pointFeature = new OpenLayers.Feature.Vector(point);
+            pointFeature.attributes = {
+                name: "John Foo",
+                team: "Finance",
+                color: 'red',
+            };
+
+            //var popup = OpenLayers.Popup.Anchored(
+
+            vectorLayer.addFeatures([pointFeature]);
+        }
+
+        function init(){
+            map = new OpenLayers.Map('map');
+
+            var graphic = new OpenLayers.Layer.Image(
+                'Sunset',
+                'image.jpg',
+                new OpenLayers.Bounds(-1024/2, -512/2, 1024/2, 512/2),
+                new OpenLayers.Size(1024, 512),
+                {numZoomLevels: 2}
+            );
+            
+            var vectorLayer = new OpenLayers.Layer.Vector("vector", {
+                styleMap: new OpenLayers.StyleMap({'default': {
+                    strokeColor: "#000000",
+                    strokeOpacity: 1,
+                    strokeWidth: 3,
+                    fillColor: "#DDD",
+                    fillOpacity: 1,
+                    pointRadius: 8,
+                    pointerEvents: "visiblePainted",
+                    label : "${name}\n\n${team}",
+                    
+                    fontColor: "${color}",
+                    fontSize: "14px",
+                    fontFamily: "Courier New, monospace",
+                    fontWeight: "bold",
+                    labelYOffset: "30",
+                    labelOutlineColor: "white",
+                    labelOutlineWidth: 3
+                }}),
+                eventListeners: {
+                    'featureselected':function(evt){
+                        var feature = evt.feature;
+                        var popup = new OpenLayers.Popup.FramedCloud("popup",
+                            OpenLayers.LonLat.fromString(feature.geometry.toShortString()),
+                            null,
+                            "<div style='font-size:2.8em'>Feature: " + feature.id +"<br>Foo: " + feature.attributes.foo+"</div>",
+                            null,
+                            true
+                        );
+                        feature.popup = popup;
+                        map.addPopup(popup);
+                    },
+                    'featureunselected':function(evt){
+                        var feature = evt.feature;
+                        map.removePopup(feature.popup);
+                        feature.popup.destroy();
+                        feature.popup = null;
+                    }
+                }
+            });
+            var selector = new OpenLayers.Control.SelectFeature(vectorLayer, {
+                hover:true,
+                autoActivate:true
+            }); 
+
+            create_place(vectorLayer, new OpenLayers.LonLat(0.0, 0.0))
+            map.addLayers([graphic, vectorLayer]);
+            map.addControl(selector);
+            //map.addControl(new OpenLayers.Control.MousePosition());
+            map.zoomToMaxExtent();
+
+            /*
+            map.events.register("click", map, function(e) {
+                var position = this.events.getMousePosition(e);
+                var lonlat = map.getLonLatFromPixel(position);
+                create_place(vectorLayer, lonlat)
+            });
+            */
+            
+            /*
+             * Controls
+             *
+             */
+/*
+            selectControl = new OpenLayers.Control.SelectFeature(
+                vectorLayer,
+                {onSelect: onFeatureSelect, onUnselect: onFeatureUnselect});
+            drawControls = {
+                polygon: new OpenLayers.Control.DrawFeature(vectorLayer,
+                            OpenLayers.Handler.Polygon),
+                select: selectControl
+            };
+            
+            for(var key in drawControls) {
+                map.addControl(drawControls[key]);
+            }
+
+            /* MARKERS
+            var markerslayer = new OpenLayers.Layer.Markers("Markers");
+            map.addLayer(markerslayer);            
+
+            map.events.register("click", map, function(e) {
+                var position = this.events.getMousePosition(e);
+                var icon = new OpenLayers.Icon('http://maps.google.com/mapfiles/ms/icons/red-pushpin.png');   
+                var lonlat = map.getLonLatFromPixel(position);
+                alert(lonlat);
+                markerslayer.addMarker(new OpenLayers.Marker(lonlat, icon));
+            });
+            map.addControl(new OpenLayers.Control.LayerSwitcher());            
+            */
+        }
+        </script>
+    </head>
+    <body onload="init()">
+        <h1 id="title">Sitting order v2</h1>
+
+        <div id="map" class="smallmap"></div>
+
+    </body>
+</html>    
