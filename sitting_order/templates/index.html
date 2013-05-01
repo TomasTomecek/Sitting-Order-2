@@ -10,10 +10,35 @@
                 border: 1px solid #00F;
             }
         </style>
-        <link rel="stylesheet" href="style.css" type="text/css">
-        <script type="text/javascript" src="OpenLayers.js"></script>
-        <script type="text/javascript" src="jquery-1.9.1.min.js"></script>
+        <link rel="stylesheet" href="{{ STATIC_URL }}css/style.css" type="text/css">
+        <link rel="stylesheet" href="{{ STATIC_URL }}css/ol_style.css" type="text/css">
+        <script type="text/javascript" src="{{ STATIC_URL }}js/OpenLayers.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}js/jquery-1.9.1.min.js"></script>
         <script type="text/javascript">
+        $.ajaxSetup({ 
+             beforeSend: function(xhr, settings) {
+                 function getCookie(name) {
+                     var cookieValue = null;
+                     if (document.cookie && document.cookie != '') {
+                         var cookies = document.cookie.split(';');
+                         for (var i = 0; i < cookies.length; i++) {
+                             var cookie = jQuery.trim(cookies[i]);
+                             // Does this cookie string begin with the name we want?
+                         if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                             cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                             break;
+                         }
+                     }
+                 }
+                 return cookieValue;
+                 }
+                 if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                     // Only send the token to relative URLs i.e. locally.
+                     xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                 }
+             } 
+        });
+        
         var map;
 
         // create new sitting
@@ -26,19 +51,47 @@
                 color: 'red',
             };
 
-            //var popup = OpenLayers.Popup.Anchored(
+            popup = new OpenLayers.Popup("asd",
+                               new OpenLayers.LonLat(lonlat.lon, lonlat.lat),
+                               new OpenLayers.Size(350,150),
+                               "<input type=\"text\" name=\"place_id\" value=\"Enter place id\" class=\"new_place\"/ >",
+                               true);
+
+            map.addPopup(popup);
+
+            $(".new_place").click(function(){
+                $(this).val("");
+            });
+            $(".new_place").keyup(function(event){
+                if (event.which == 13) {
+                    $.post(
+                        "/ajax/",
+                        { "lon": lonlat.lon, "lat": lonlat.lat, "id": $(this).val() },
+                        function(data) {
+                            if (data["status"] == "ok") {
+                                alert("OK");
+                            }
+                        }
+                    );
+                    popup.destroy();
+                }
+            });
 
             vectorLayer.addFeatures([pointFeature]);
         }
 
         function init(){
-            map = new OpenLayers.Map('map');
+
+
+            // http://docs.openlayers.org/library/deploying.html
+            OpenLayers.ImgPath = "{{ STATIC_URL }}images/ol/"
+            map = new OpenLayers.Map('map', { theme: null });
 
             var graphic = new OpenLayers.Layer.Image(
                 'Sunset',
-                '2nd_floor_b1.gif',
-                new OpenLayers.Bounds(-1024/2, -512/2, 1024/2, 512/2),
-                new OpenLayers.Size(1024, 512),
+                '{{ STATIC_URL }}images/floor_plan.gif',
+                new OpenLayers.Bounds(-500/2, -700/2, 500/2, 700/2),
+                new OpenLayers.Size(500, 700),
                 {numZoomLevels: 2}
             );
 
@@ -88,7 +141,6 @@
                 clickout:true
             });
 
-            create_place(vectorLayer, new OpenLayers.LonLat(0.0, 0.0))
             map.addLayers([graphic, vectorLayer]);
             map.addControl(selector);
             //map.addControl(new OpenLayers.Control.MousePosition());
@@ -96,6 +148,7 @@
 
 
             map.events.register("click", map, function(e) {
+                // what control is selected? "create" or "select"
                 if ($("#controlsForm input[type='radio']:checked").val() == "select") {
                     return;
                 }
@@ -103,6 +156,8 @@
                 var lonlat = map.getLonLatFromPixel(position);
                 create_place(vectorLayer, lonlat)
             });
+
+            //create_place(vectorLayer, new OpenLayers.LonLat(0.0, 0.0))
 
             /*
              * Controls

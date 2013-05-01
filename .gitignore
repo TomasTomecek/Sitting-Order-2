@@ -6,7 +6,7 @@
 *.so
 
 *.sqlite
-
+.*
 # Packages
 *.egg
 *.egg-info
