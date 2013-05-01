@@ -1,7 +1,11 @@
 *.py[cod]
 
+*~
+
 # C extensions
 *.so
+
+*.sqlite
 
 # Packages
 *.egg
