@@ -11,7 +11,8 @@
             }
         </style>
         <link rel="stylesheet" href="style.css" type="text/css">
-        <script src="OpenLayers.js"></script>
+        <script type="text/javascript" src="OpenLayers.js"></script>
+        <script type="text/javascript" src="jquery-1.9.1.min.js"></script>
         <script type="text/javascript">
         var map;
 
@@ -35,12 +36,12 @@
 
             var graphic = new OpenLayers.Layer.Image(
                 'Sunset',
-                'image.jpg',
+                '2nd_floor_b1.gif',
                 new OpenLayers.Bounds(-1024/2, -512/2, 1024/2, 512/2),
                 new OpenLayers.Size(1024, 512),
                 {numZoomLevels: 2}
             );
-            
+
             var vectorLayer = new OpenLayers.Layer.Vector("vector", {
                 styleMap: new OpenLayers.StyleMap({'default': {
                     strokeColor: "#000000",
@@ -51,7 +52,7 @@
                     pointRadius: 8,
                     pointerEvents: "visiblePainted",
                     label : "${name}\n\n${team}",
-                    
+
                     fontColor: "${color}",
                     fontSize: "14px",
                     fontFamily: "Courier New, monospace",
@@ -66,7 +67,7 @@
                         var popup = new OpenLayers.Popup.FramedCloud("popup",
                             OpenLayers.LonLat.fromString(feature.geometry.toShortString()),
                             null,
-                            "<div style='font-size:2.8em'>Feature: " + feature.id +"<br>Foo: " + feature.attributes.foo+"</div>",
+                            "<div style='font-size:1.2em; background-color: white;'>Feature: " + feature.id +"<br>Foo: " + feature.attributes.foo+"</div>",
                             null,
                             true
                         );
@@ -82,9 +83,10 @@
                 }
             });
             var selector = new OpenLayers.Control.SelectFeature(vectorLayer, {
-                hover:true,
-                autoActivate:true
-            }); 
+                //hover:true,
+                autoActivate:true,
+                clickout:true
+            });
 
             create_place(vectorLayer, new OpenLayers.LonLat(0.0, 0.0))
             map.addLayers([graphic, vectorLayer]);
@@ -92,14 +94,16 @@
             //map.addControl(new OpenLayers.Control.MousePosition());
             map.zoomToMaxExtent();
 
-            /*
+
             map.events.register("click", map, function(e) {
+                if ($("#controlsForm input[type='radio']:checked").val() == "select") {
+                    return;
+                }
                 var position = this.events.getMousePosition(e);
                 var lonlat = map.getLonLatFromPixel(position);
                 create_place(vectorLayer, lonlat)
             });
-            */
-            
+
             /*
              * Controls
              *
@@ -113,23 +117,22 @@
                             OpenLayers.Handler.Polygon),
                 select: selectControl
             };
-            
+
             for(var key in drawControls) {
                 map.addControl(drawControls[key]);
             }
 
             /* MARKERS
             var markerslayer = new OpenLayers.Layer.Markers("Markers");
-            map.addLayer(markerslayer);            
+            map.addLayer(markerslayer);
 
             map.events.register("click", map, function(e) {
                 var position = this.events.getMousePosition(e);
-                var icon = new OpenLayers.Icon('http://maps.google.com/mapfiles/ms/icons/red-pushpin.png');   
+                var icon = new OpenLayers.Icon('http://maps.google.com/mapfiles/ms/icons/red-pushpin.png');
                 var lonlat = map.getLonLatFromPixel(position);
                 alert(lonlat);
                 markerslayer.addMarker(new OpenLayers.Marker(lonlat, icon));
             });
-            map.addControl(new OpenLayers.Control.LayerSwitcher());            
             */
         }
         </script>
@@ -139,5 +142,18 @@
 
         <div id="map" class="smallmap"></div>
 
+        <form id="controlsForm">
+            <ul id="controlToggle">
+                <li>
+                    <input type="radio" name="controls" value="create" id="createToggle"
+                           checked="checked" />
+                    <label for="createToggle">Create</label>
+                </li>
+                <li>
+                    <input type="radio" name="controls" value="select" id="selectToggle" />
+                    <label for="selectToggle">Select</label>
+                </li>
+            </ul>
+        </form>
     </body>
-</html>    
+</html>
