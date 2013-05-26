@@ -32,18 +32,39 @@ class Team(models.Model):
     name = models.CharField(max_length=128)
     # related is useless
     leader = models.OneToOneField("User", related_name="team_related")
-
+    # RGB color displayed on map
+    color = models.CharField(max_length=6)
     def __unicode__(self):
         return u"%s (%s)" % (self.name, self.leader)
 
 
 class User(AbstractBaseUser):
-    # <kerberos name>@realm
+    # firstname + lastname
     name = models.CharField(max_length=255)
+    # translitared firstname + lastname
+    name_tl = models.CharField(max_length=255)
+    # some users have very common nicknames
+    nickname = models.CharField(max_length=128, blank=True, null=True)
+    # <kerberos name>@realm
     email = models.EmailField(max_length=254, unique=True, db_index=True)
     team = models.ForeignKey(Team, related_name="members", blank=True, null=True)
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+
+    INTERN = 1
+    HALF_TIME = 2
+    FULL_TIME = 3
+    OTHER = 4
+    DEFAULT = 5
+    STATUS_CHOICES = (
+        (INTERN, 'Intern'),
+        (HALF_TIME, 'Half time'),
+        (FULL_TIME, 'Full time'),
+        (OTHER, 'Other'),
+        (DEFAULT, 'Default'),
+    )
+    employment_type = models.IntegerField(
+        choices=STATUS_CHOICES, default=DEFAULT)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -81,11 +102,14 @@ class Floor(models.Model):
     building = models.ForeignKey(Building)
 
 class Place(models.Model):
-    floor = models.ForeignKey(Floor)
+    """place on map"""
+    floor = models.ForeignKey(Floor, null=True)
     lon = models.FloatField()
     lat = models.FloatField()
+    seat = models.OneToOneField('Seat', null=True)
 
 class Seat(models.Model):
+    """virtual seat where someone is sitting"""
     OCCUPIED = 1
     RESERVED = 2
     BLANK = 3
