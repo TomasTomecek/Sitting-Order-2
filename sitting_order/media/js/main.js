@@ -72,9 +72,10 @@ function init_seat(lonlat) {
     });
     $(".new_place").keyup(function(event){
         if (event.which == 13) {
+            var floor_id = $("#floor-select select").val();
             $.post(
                 "/ajax/",
-                { "lon": lonlat.lon, "lat": lonlat.lat, "id": $(this).val() },
+                { "lon": lonlat.lon, "lat": lonlat.lat, "id": $(this).val(), "floor_id": floor_id },
                 function(data) {
                     if (data["status"] == "ok") {
                         pointFeature = create_place(data['name'], lonlat.lon, lonlat.lat)
@@ -92,14 +93,10 @@ function place_seat(name, lon, lat) {
     vector_layer.addFeatures([pointFeature]);
 }
 
-function setupMap(){
-    // http://docs.openlayers.org/library/deploying.html
-    OpenLayers.ImgPath = "/static/images/ol/"
-    map = new OpenLayers.Map('map', { theme: null });
-
-    var graphic = new OpenLayers.Layer.Image(
+function load_floor(image_path){
+   var graphic = new OpenLayers.Layer.Image(
         'Sunset',
-        '/static/images/floor_plan.gif',
+        image_path,
         new OpenLayers.Bounds(-500/2, -700/2, 500/2, 700/2),
         new OpenLayers.Size(500, 700),
         {numZoomLevels: 2}
@@ -166,6 +163,12 @@ function setupMap(){
         var lonlat = map.getLonLatFromPixel(position);
         init_seat(lonlat)
     });
+}
+
+function setup_env(){
+    // http://docs.openlayers.org/library/deploying.html
+    OpenLayers.ImgPath = "/static/images/ol/"
+    map = new OpenLayers.Map('map', { theme: null });
 
     //create_place(vectorLayer, new OpenLayers.LonLat(0.0, 0.0))
 
@@ -201,14 +204,32 @@ function setupMap(){
     */
 }
 
+function assign_handlers() {
+    $("#floor-select").change(function() {
+        var select = $(this).find("select");
+        var value = select.val();
+        if (value != "") {
+            $.get(
+                '/ajax/floor/' + value + "/",
+                function(data) {
+                    load_floor(data['image_path']);
+                }        
+            );
+            $.get(
+                '/ajax/floor/' + value + '/all/',
+                function(data) {
+                    $.each(data, function(index, item){
+                        place_seat(item["name"], item["lon"], item["lat"]);
+                    });
+                }        
+            );            
+        } else {
+            // unload map, or?
+        }     
+    });
+}
+
 $(document).ready(function() {
-    setupMap();
-    $.get(
-        '/ajax/all/',
-        function(data) {
-            $.each(data, function(index, item){
-                place_seat(item["name"], item["lon"], item["lat"]);
-            });
-        }        
-    );
+    setup_env();
+    assign_handlers();
 });

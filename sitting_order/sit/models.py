@@ -34,6 +34,8 @@ class Team(models.Model):
     leader = models.OneToOneField("User", related_name="team_related")
     # RGB color displayed on map
     color = models.CharField(max_length=6)
+    comment = models.CharField(max_length=255)
+    parent_team = models.ForeignKey('self', related_name="children")
     def __unicode__(self):
         return u"%s (%s)" % (self.name, self.leader)
 
@@ -100,6 +102,11 @@ class Building(models.Model):
 
 class Floor(models.Model):
     building = models.ForeignKey(Building)
+    image = models.CharField(max_length=255)
+    number = models.IntegerField()
+
+    def __unicode__(self):
+        return u"%s: floor %d" % (self.building.name, self.number)
 
 class Place(models.Model):
     """place on map"""

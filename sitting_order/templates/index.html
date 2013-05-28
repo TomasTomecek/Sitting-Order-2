@@ -19,6 +19,14 @@
     <body>
         <h1 id="title">Sitting order v2</h1>
 
+        <form id="floor-select">
+            <div class="fieldWrapper">
+                {{ floors_form.floor.errors }}
+                <label for="id_floor">Floor:</label>
+                {{ floors_form.floor }}
+            </div>
+        </form>
+
         <div id="map" class="smallmap"></div>
 
         <form id="controlsForm">
