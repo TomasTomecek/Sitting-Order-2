@@ -44,12 +44,12 @@ class AjaxView(JSONResponseMixin, TemplateView):
         s = get_object_or_404(Seat, number=post['id'])
         p.seat = s
         p.save()
-        return JSONResponseMixin.render_to_response(
-            self, {
-                'status': 'ok',
-                'name': s.user.name
-            }
-        )
+
+        js = { 'status': 'ok' }
+        js.update(s.serialize())
+
+        return JSONResponseMixin.render_to_response(self, js)
+
 
 class AjaxFloorView(JSONResponseMixin, TemplateView):
     def get(self, request, floor_id, *args, **kwargs):
@@ -66,11 +66,7 @@ class AjaxAllView(JSONResponseMixin, TemplateView):
         response = []
         places = Place.objects.filter(floor__id=floor_id)
         for p in places:
-            response.append({
-                'name': p.seat.user.name,
-                'lon': p.lon,
-                'lat': p.lat
-            })
+            response.append(p.serialize())
         return JSONResponseMixin.render_to_response(
             self, response
         )

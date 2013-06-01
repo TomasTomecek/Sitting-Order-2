@@ -4,7 +4,14 @@ import csv
 import re
 
 import sys, os
-sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+sys.path.insert(0,
+    os.path.dirname(
+        os.path.dirname(
+            os.path.abspath(__file__))))
+
+from pprint import pprint
+
+pprint(sys.path)
 
 from sit.models import *
 from django.contrib.auth import get_user_model
@@ -27,7 +34,7 @@ def parse_csv():
             owner = row[1]
 
             seat = Seat(number=seat_id)
-            if owner == u"0":
+            if owner.decode('utf-8') == u"0":
                 seat.status = Seat.BLANK
                 owner = None
                 print u"seat %s is empty" % seat_id
@@ -43,11 +50,13 @@ def parse_csv():
             if owner:
                 owner = owner.decode('utf-8')
                 owner_translit = unidecode(owner)
-            user = get_user_model()(name=owner, name_tl=owner_translit,
-                                    email=str(uuid.uuid4()) + "@email.com")
-            #user.save()
-            seat.user = user
-            #seat.save()
+                user = get_user_model()(name=owner, name_tl=owner_translit,
+                                        email=str(uuid.uuid4()) + "@email.com")
+                user.save()
+                seat.user = user
+            else:
+                seat.user = None
+            seat.save()
 
 
 if __name__ == '__main__':

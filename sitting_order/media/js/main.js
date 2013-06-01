@@ -46,12 +46,20 @@ var map;
 var vector_layer;
 
 //create place frmo name, lon, lat
-function create_place(name, lon, lat) {
+function create_place(dict, lon, lat) {
     var point = new OpenLayers.Geometry.Point(lon, lat);
     var pointFeature = new OpenLayers.Feature.Vector(point);
+    
+    if (dict['is_leader']) {
+        outline_width = "2";
+    } else {
+        outline_width = "1";
+    }
+
     pointFeature.attributes = {
-        name: name,
-        team: "Finance",
+        name: dict['name'],
+        team: dict['team'],
+        outline_width: outline_width,
         color: 'red',
     }; 
     return pointFeature;
@@ -78,7 +86,8 @@ function init_seat(lonlat) {
                 { "lon": lonlat.lon, "lat": lonlat.lat, "id": $(this).val(), "floor_id": floor_id },
                 function(data) {
                     if (data["status"] == "ok") {
-                        pointFeature = create_place(data['name'], lonlat.lon, lonlat.lat)
+                        pointFeature = create_place({name: data['name'], team: data['team']},
+                                                    lonlat.lon, lonlat.lat)
                         vector_layer.addFeatures([pointFeature]);
                     }
                 }
@@ -88,8 +97,8 @@ function init_seat(lonlat) {
     });    
 }
 
-function place_seat(name, lon, lat) {
-    pointFeature = create_place(name, lon, lat)
+function place_seat(dict, lon, lat) {
+    pointFeature = create_place(dict, lon, lat)
     vector_layer.addFeatures([pointFeature]);
 }
 
@@ -106,20 +115,20 @@ function load_floor(image_path){
         styleMap: new OpenLayers.StyleMap({'default': {
             strokeColor: "#000000",
             strokeOpacity: 1,
-            strokeWidth: 3,
-            fillColor: "#DDD",
+            strokeWidth: 1,
+            fillColor: "${color}",
             fillOpacity: 1,
-            pointRadius: 8,
+            pointRadius: 3,
             pointerEvents: "visiblePainted",
-            label : "${name}\n\n${team}",
+            label : "${name}\n${team}",
 
             fontColor: "${color}",
             fontSize: "14px",
-            fontFamily: "Courier New, monospace",
+            fontFamily: "Droid sans",
             fontWeight: "bold",
-            labelYOffset: "30",
-            labelOutlineColor: "white",
-            labelOutlineWidth: 3
+            labelYOffset: "20",
+            labelOutlineColor: "#000000",
+            labelOutlineWidth: "${outline_width}",
         }}),
         eventListeners: {
             'featureselected':function(evt){
@@ -127,7 +136,7 @@ function load_floor(image_path){
                 var popup = new OpenLayers.Popup.FramedCloud("popup",
                     OpenLayers.LonLat.fromString(feature.geometry.toShortString()),
                     null,
-                    "<div style='font-size:1.2em; background-color: white;'>Feature: " + feature.id +"<br>Foo: " + feature.attributes.foo+"</div>",
+                    "<div style='font-size:1.2em; background-color: white;'>Name: " + feature.attributes.name + "<br />Team: " + feature.attributes.team + "</div>",
                     null,
                     true
                 );
@@ -219,7 +228,7 @@ function assign_handlers() {
                 '/ajax/floor/' + value + '/all/',
                 function(data) {
                     $.each(data, function(index, item){
-                        place_seat(item["name"], item["lon"], item["lat"]);
+                        place_seat(item, item["lon"], item["lat"]);
                     });
                 }        
             );            

@@ -34,8 +34,9 @@ class Team(models.Model):
     leader = models.OneToOneField("User", related_name="team_related")
     # RGB color displayed on map
     color = models.CharField(max_length=6)
-    comment = models.CharField(max_length=255)
-    parent_team = models.ForeignKey('self', related_name="children")
+    comment = models.CharField(max_length=255, blank=True)
+    parent_team = models.ForeignKey('self', related_name="children",
+                                    blank=True, null=True)
     def __unicode__(self):
         return u"%s (%s)" % (self.name, self.leader)
 
@@ -115,6 +116,20 @@ class Place(models.Model):
     lat = models.FloatField()
     seat = models.OneToOneField('Seat', null=True)
 
+    def __unicode__(self):
+        return u"%d: %s" % (self.floor, self.seat)
+
+    def serialize(self):
+        js = self.seat.serialize()
+
+        js.update({
+            'lon': self.lon,
+            'lat': self.lat,
+        })
+
+        return js
+
+
 class Seat(models.Model):
     """virtual seat where someone is sitting"""
     OCCUPIED = 1
@@ -128,4 +143,20 @@ class Seat(models.Model):
 
     status = models.IntegerField(choices=STATUS_CHOICES, default=BLANK)
     number = models.CharField(max_length=16)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
+
+    def __unicode__(self):
+        return u"%s (%s)" % (self.number, self.user)
+
+    def serialize(self):
+        team = None
+        is_leader = False
+        if self.user.team:
+            team = self.user.team.name
+            if self.user.team.leader == self.user:
+                is_leader = True
+        return {
+            'name': self.user.name,
+            'team': team,
+            'is_leader': is_leader,
+        }
